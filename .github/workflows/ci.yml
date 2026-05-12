@@ -1,0 +1,62 @@
+name: Backend CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  # ── Job 1: Tests ─────────────────────────────────────────────────────────────
+  test:
+    name: Run Tests (95%+ Coverage)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        # backend folder ke andar hi sab hai — no working-directory needed
+
+      - name: Run pytest with coverage
+        env:
+          MONGO_URL: ${{ secrets.MONGO_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python -m pytest tests/test_apis.py -v \
+            --cov=app \
+            --cov-report=term-missing \
+            --cov-fail-under=95
+
+  # ── Job 2: Docker Build ───────────────────────────────────────────────────────
+  docker-build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t multimedia-ai-backend:latest .
+
+      - name: Test Docker container health
+        run: |
+          docker run -d \
+            --name test_container \
+            -e MONGO_URL="${{ secrets.MONGO_URL }}" \
+            -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+            -p 8000:8000 \
+            multimedia-ai-backend:latest
+          sleep 5
+          curl --fail http://localhost:8000/health || exit 1
+          docker stop test_container

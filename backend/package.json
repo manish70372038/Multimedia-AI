@@ -1,0 +1,18 @@
+{
+  "name": "multimedia-ai-backend",
+  "version": "1.0.0",
+  "description": "AI-powered multimedia analysis backend",
+  "scripts": {
+    "start": "python run.py",
+    "test": "python -m pytest tests/test_apis.py -v --cov=app",
+    "test-fast": "pytest",
+    "lint": "flake8 app"
+  },
+  "keywords": [
+    "fastapi",
+    "mongodb",
+    "pytest"
+  ],
+  "author": "Manish Kumar",
+  "license": "ISC"
+}

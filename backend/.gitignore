@@ -1,0 +1,9 @@
+.env
+venv/
+__pycache__/
+*.pyc
+.coverage
+uploads/*
+!uploads/.gitkeep
+.pytest_cache/
+node_modules/
