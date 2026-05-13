@@ -306,6 +306,14 @@ GEMINI_API_KEY = your_gemini_api_key
 MONGO_URL      = your_mongodb_url
 ```
 
+---
+
+## 🎥 Walkthrough Video
+
+> [YouTube / Google Drive Link — Add here]
+
+---
+
 ## 👨‍💻 Author
 
 **Manish**

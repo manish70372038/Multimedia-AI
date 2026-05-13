@@ -27,7 +27,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run pytest with coverage
-        working-directory: ./backend
+        working-directory: backend 
         env:
           MONGO_URL: ${{ secrets.MONGO_URL }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
