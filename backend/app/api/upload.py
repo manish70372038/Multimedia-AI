@@ -61,14 +61,13 @@ async def upload_file(file: UploadFile = File(...)):
 
         # 6. Return — full_text bhi bhejo taaki chat kaam kare
         return {
-            "id":        doc_id,
-            "message":   "File processed and saved successfully",
-            "summary":   summary,
-            "type":      file_type,
-            "full_text": full_text,        # ← Chat ke liye zaroori
-            "timestamps": timestamps,       # ← Play button ke liye zaroori
-            "file_path": file_path,
-        }
+    "id": doc_id,
+    "message": "File processed and saved successfully",
+    "summary": summary,
+    "type": file_type,
+    "full_text": full_text,
+    "timestamps": timestamps,
+}
 
     except HTTPException:
         raise

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bot, User, Send, FileText, AlertCircle } from 'lucide-react'
 import { chatWithPDF } from '../api/index.js'
+import ReactMarkdown from 'react-markdown'
 
 function now() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -22,6 +23,8 @@ export default function ChatInterface() {
   useEffect(() => {
     if (pdfText) {
       setMsgs([{ role: 'ai', text: `Hi! I've analysed **${fileName}**. Ask me anything about it!`, time: now() }])
+    } else {
+      setMsgs([{ role: 'ai', text: `Hello! No file uploaded yet, but I'm here to help. Upload a file for specific Q&A!`, time: now() }])
     }
   }, [])
 
@@ -38,14 +41,14 @@ export default function ChatInterface() {
   const send = async () => {
     const q = input.trim()
     if (!q || loading) return
-    if (!pdfText) { setError('Please upload a file first on the Upload page.'); return }
-
+    
     setError('')
     setInput('')
     setMsgs(p => [...p, { role: 'user', text: q, time: now() }])
     setLoad(true)
 
     try {
+      // Agar pdfText nahi hai toh empty string bhejega (General Chat mode)
       const data = await chatWithPDF(pdfText, q)
       setMsgs(p => [...p, { role: 'ai', text: data.answer, time: now() }])
     } catch {
@@ -72,47 +75,42 @@ export default function ChatInterface() {
           <div>
             <p style={{ fontWeight: 700, fontSize: 15 }}>AI Assistant</p>
             <p style={{ color: 'var(--tx2)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--mono)', marginTop: 2 }}>
-              {fileName ? <><FileText size={11} />{fileName}</> : 'No file loaded'}
+              {fileName ? <><FileText size={11} />{fileName}</> : 'General Mode'}
             </p>
           </div>
         </div>
-        <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--mono)', padding: '4px 12px', borderRadius: 99, background: pdfText ? 'rgba(62,207,142,0.12)' : 'rgba(239,68,68,0.1)', color: pdfText ? 'var(--green)' : 'var(--red)' }}>
-          {pdfText ? 'Ready' : 'No File'}
+        <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--mono)', padding: '4px 12px', borderRadius: 99, background: pdfText ? 'rgba(62,207,142,0.12)' : 'rgba(255, 152, 0, 0.12)', color: pdfText ? 'var(--green)' : 'var(--amber)' }}>
+          {pdfText ? 'Context Ready' : 'General AI'}
         </span>
       </div>
 
       {/* Messages */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 860, width: '100%', margin: '0 auto', alignSelf: 'center', boxSizing: 'border-box' }}>
 
-        {!pdfText && (
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-            style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 48, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, maxWidth: 380, margin: '40px auto' }}>
-            <AlertCircle size={32} color="var(--amber)" />
-            <h3 style={{ fontSize: 18, fontWeight: 700 }}>No file uploaded</h3>
-            <p style={{ color: 'var(--tx2)', fontSize: 14 }}>Go to Upload page and process a PDF, audio, or video file first.</p>
-            <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 22px', borderRadius: 'var(--r-md)', background: 'var(--accent)', color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: 14 }}>
-              Go to Upload
-            </a>
-          </motion.div>
-        )}
-
         <AnimatePresence>
           {msgs.map((m, i) => (
             <motion.div key={i}
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}
-              style={{ display: 'flex', alignItems: 'flex-end', gap: 10, flexDirection: m.role === 'user' ? 'row-reverse' : 'row' }}>
+              style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flexDirection: m.role === 'user' ? 'row-reverse' : 'row' }}>
               <div style={avatar(m.role === 'ai')}>
                 {m.role === 'ai' ? <Bot size={15} /> : <User size={15} />}
               </div>
               <div style={bubble(m.role === 'ai', m.isErr)}>
-                <p style={{ fontSize: 14, lineHeight: 1.65, whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: m.role === 'user' ? '#fff' : 'var(--tx1)' }}>{m.text}</p>
+                <div style={{ 
+                  fontSize: 14, 
+                  lineHeight: 1.65, 
+                  wordBreak: 'break-word', 
+                  color: m.role === 'user' ? '#fff' : 'var(--tx1)' 
+                }}>
+                  {/* Markdown Implementation */}
+                  <ReactMarkdown>{m.text}</ReactMarkdown>
+                </div>
                 <span style={{ display: 'block', fontSize: 10, fontFamily: 'var(--mono)', color: m.role === 'user' ? 'rgba(255,255,255,0.5)' : 'var(--tx3)', marginTop: 6, textAlign: 'right' }}>{m.time}</span>
               </div>
             </motion.div>
           ))}
         </AnimatePresence>
 
-        {/* Typing indicator */}
         {loading && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
             <div style={avatar(true)}><Bot size={15} /></div>
@@ -141,15 +139,15 @@ export default function ChatInterface() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={onKey}
-              placeholder={pdfText ? 'Ask anything about your file...' : 'Upload a file first...'}
-              disabled={!pdfText || loading}
+              placeholder={pdfText ? 'Ask anything about your file...' : 'Type a general question...'}
+              disabled={loading}
               rows={1}
-              style={{ flex: 1, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '12px 16px', color: 'var(--tx1)', fontFamily: 'var(--display)', fontSize: 14, resize: 'none', outline: 'none', transition: 'var(--ease)', maxHeight: 120, opacity: (!pdfText || loading) ? 0.5 : 1 }}
+              style={{ flex: 1, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '12px 16px', color: 'var(--tx1)', fontFamily: 'var(--display)', fontSize: 14, resize: 'none', outline: 'none', transition: 'var(--ease)', maxHeight: 120, opacity: loading ? 0.5 : 1 }}
               onFocus={e => e.target.style.borderColor = 'var(--accent)'}
               onBlur={e => e.target.style.borderColor = 'var(--border)'}
             />
-            <button onClick={send} disabled={!input.trim() || loading || !pdfText}
-              style={{ width: 46, height: 46, borderRadius: 'var(--r-md)', background: 'var(--accent)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0, opacity: (!input.trim() || loading || !pdfText) ? 0.4 : 1, transition: 'var(--ease)' }}>
+            <button onClick={send} disabled={!input.trim() || loading}
+              style={{ width: 46, height: 46, borderRadius: 'var(--r-md)', background: 'var(--accent)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0, opacity: (!input.trim() || loading) ? 0.4 : 1, transition: 'var(--ease)' }}>
               <Send size={17} />
             </button>
           </div>
