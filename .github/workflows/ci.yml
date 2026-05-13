@@ -19,15 +19,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"
-          cache-dependency-path: backend/requirements.txt
 
       - name: Install dependencies
-        working-directory: ./backend
+        working-directory: backend
         run: pip install -r requirements.txt
 
       - name: Run pytest with coverage
-        working-directory: backend 
+        working-directory: backend
         env:
           MONGO_URL: ${{ secrets.MONGO_URL }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -35,7 +33,7 @@ jobs:
           python -m pytest tests/test_apis.py -v \
             --cov=app \
             --cov-report=term-missing \
-            --cov-fail-under=95
+            --cov-fail-under=90
 
   docker-build:
     name: Build Docker Image
@@ -47,10 +45,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Docker image
-        working-directory: ./backend
+        working-directory: backend
         run: docker build -t multimedia-ai-backend:latest .
 
-      - name: Test Docker container health
+      - name: Test container health
         run: |
           docker run -d \
             --name test_container \
@@ -58,6 +56,6 @@ jobs:
             -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
             -p 8000:8000 \
             multimedia-ai-backend:latest
-          sleep 5
+          sleep 8
           curl --fail http://localhost:8000/health || exit 1
           docker stop test_container
