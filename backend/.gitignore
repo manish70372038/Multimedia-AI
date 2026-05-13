@@ -1,9 +1,14 @@
+node_modules/
 .env
 venv/
 __pycache__/
 *.pyc
 .coverage
+.pytest_cache/
 uploads/*
 !uploads/.gitkeep
-.pytest_cache/
-node_modules/
+*.log
+.DS_Store
+Thumbs.db
+dist/
+build/
