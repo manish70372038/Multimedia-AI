@@ -65,7 +65,6 @@ export default function FileUpload() {
 
   const onDrop = (e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) pick(f) }
 
-  // ✅ FULLY UPDATED LOGIC
   const handleUpload = async () => {
     if (!file) return
     setStatus('uploading'); setProgress(0); setError('')
@@ -73,17 +72,20 @@ export default function FileUpload() {
       const data = await uploadFile(file, setProgress)
       const fileType = getFileType(file.type)
 
-      // Context extract karke save karna (Chat ke liye)
-      const textForChat = data.extracted_content || data.full_text || data.text || ''
+      // Chat ke liye text save karo
+      const textForChat = data.full_text || data.extracted_content || data.text || ''
       sessionStorage.setItem('pdf_text', textForChat)
       sessionStorage.setItem('file_name', file.name)
       sessionStorage.setItem('file_type', fileType)
+
+      // ✅ FIX: data.timestamps pehle check karo, phir data.segments
+      const rawTimestamps = data.timestamps || data.segments || []
 
       const normalizedResult = {
         ...data,
         type: fileType,
         summary: data.summary || 'No summary available.',
-        timestamps: (data.segments || []).map(seg => ({
+        timestamps: rawTimestamps.map(seg => ({
           ...seg,
           start_formatted: seg.start_formatted || formatTime(seg.start),
           end_formatted: seg.end_formatted || formatTime(seg.end),
@@ -137,6 +139,7 @@ export default function FileUpload() {
             <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ padding: '16px 0' }}>
               <div style={{ width: 60, height: 60, borderRadius: 16, background: 'var(--bg2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--accent)' }}><Upload size={26} /></div>
               <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>Drag & drop your file here</p>
+              <p style={{ color: 'var(--tx2)', fontSize: 13, marginBottom: 12 }}>PDF, MP3, WAV, MP4, MKV supported</p>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
                 {['PDF', 'MP3', 'WAV', 'MP4', 'MKV'].map(l => <span key={l} style={{ ...s.tag, marginBottom: 0 }}>{l}</span>)}
               </div>
@@ -176,7 +179,7 @@ export default function FileUpload() {
           </div>
           {tab === 'summary' && <SummaryView summary={result.summary} />}
           {tab === 'timestamps' && <TimestampList timestamps={result.timestamps} mediaRef={mediaRef} />}
-          
+
           <div style={{ ...s.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, background: 'linear-gradient(135deg,var(--bg3),var(--bg2))' }}>
             <div>
               <p style={{ fontWeight: 700, fontSize: 16 }}>Ask AI about this file</p>
